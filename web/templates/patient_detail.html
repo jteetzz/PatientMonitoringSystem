@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Patient {{ patient.id }} — Details{% endblock %}
+
+{% block content %}
+<h1>Patient Details</h1>
+
+<div class="card">
+    <h2>{{ patient.name }}</h2>
+    <p><strong>Room:</strong> {{ patient.room }}</p>
+    <p><strong>Condition:</strong> {{ patient.condition }}</p>
+</div>
+
+<div class="card">
+    <h2>Vital History (latest 10)</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Time</th>
+            <th>HR (bpm)</th>
+            <th>SpO2 (%)</th>
+            <th>BP (mmHg)</th>
+            <th>Temp (°C)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for v in patient.vitals_history[-10:]|reverse %}
+            <tr>
+                <td>{{ v.timestamp.strftime("%H:%M:%S") }}</td>
+                <td>{{ v.heart_rate }}</td>
+                <td>{{ v.spo2 }}</td>
+                <td>{{ v.systolic_bp }}/{{ v.diastolic_bp }}</td>
+                <td>{{ "%.1f"|format(v.temperature) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Alerts</h2>
+    <div class="alert-list">
+        {% if patient.alerts %}
+            {% for a in patient.alerts|reverse %}
+                <div class="alert-item alert-{{ a.severity }}">
+                    <div class="alert-header">
+                        <span>{{ a.created_at.strftime("%H:%M:%S") }}</span>
+                        <span>{{ a.severity|capitalize }}</span>
+                    </div>
+                    <p>{{ a.message }}</p>
+                    <form method="post" action="{{ url_for('web.ack_alert', alert_id=a.id) }}">
+                        {% if not a.acknowledged %}
+                            <button type="submit" class="btn-small">Acknowledge</button>
+                        {% else %}
+                            <span class="badge">Acknowledged</span>
+                        {% endif %}
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No alerts for this patient.</p>
+        {% endif %}
+    </div>
+</div>
+
+<a href="{{ url_for('web.dashboard') }}" class="btn-back">← Back to dashboard</a>
+{% endblock %}
