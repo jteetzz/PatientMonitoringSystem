@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Patient Monitoring{% endblock %}
+
+{% block content %}
+<h1>Patient Dashboard</h1>
+<p class="subtitle">Real-time simulated vital signs with prioritized alerts.</p>
+
+<section class="grid">
+    <div class="card">
+        <h2>Patients</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Room</th>
+                <th>Condition</th>
+                <th>Heart Rate</th>
+                <th>SpO2</th>
+                <th>BP</th>
+                <th>Temp</th>
+                <th>Last Updated</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in patients %}
+                {% set v = p.latest_vitals %}
+                <tr onclick="goToPatient({{ p.id }})" class="clickable-row">
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.room }}</td>
+                    <td>{{ p.condition }}</td>
+                    {% if v %}
+                        <td>{{ v.heart_rate }} bpm</td>
+                        <td>{{ v.spo2 }}%</td>
+                        <td>{{ v.systolic_bp }}/{{ v.diastolic_bp }}</td>
+                        <td>{{ "%.1f"|format(v.temperature) }} °C</td>
+                        <td>{{ v.timestamp.strftime("%H:%M:%S") }}</td>
+                    {% else %}
+                        <td colspan="4">No data</td>
+                        <td>-</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p class="hint">Click a row to view detailed history and alerts.</p>
+    </div>
+
+    <div class="card">
+        <h2>Recent Alerts</h2>
+        <div class="alert-list">
+            {% if alerts %}
+                {% for a in alerts|reverse %}
+                    <div class="alert-item alert-{{ a.severity }}">
+                        <div class="alert-header">
+                            <span>Patient #{{ a.patient_id }}</span>
+                            <span>{{ a.created_at.strftime("%H:%M:%S") }}</span>
+                        </div>
+                        <p>{{ a.message }}</p>
+                        <form method="post" action="{{ url_for('web.ack_alert', alert_id=a.id) }}">
+                            {% if not a.acknowledged %}
+                                <button type="submit" class="btn-small">Acknowledge</button>
+                            {% else %}
+                                <span class="badge">Acknowledged</span>
+                            {% endif %}
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No alerts yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<p class="auto-refresh-note">This page auto-refreshes every 10 seconds to simulate real-time monitoring.</p>
+{% endblock %}
