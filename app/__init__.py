@@ -1,27 +1,31 @@
 import threading
 from flask import Flask
-from .models import db, init_db
-from .routes import main_bp
-from .monitoring import start_monitoring_service
-from . import monitoring  # to share lock / shared structures
+from web.routes import web_bp
+from .monitoring import start_monitoring_thread
+from .storage import storage
+
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object("config.Config")
+    app.config["SECRET_KEY"] = "CMPSC472"
 
-    # Initialize database
-    db.init_app(app)
-    with app.app_context():
-        init_db()
+    # Register blueprints
+    app.register_blueprint(web_bp)
 
-    # Register blueprints (routes)
-    app.register_blueprint(main_bp)
-
-    # Start background monitoring thread (OS concept: concurrency + scheduling)
-    monitoring_thread = threading.Thread(
-        target=start_monitoring_service,
-        daemon=True
-    )
-    monitoring_thread.start()
+    # Start background monitoring thread once
+    start_background_worker_once()
 
     return app
+
+
+# Simple guard so we don’t start multiple threads if app is imported multiple times
+_monitor_thread_started = False
+_monitor_lock = threading.Lock()
+
+
+def start_background_worker_once():
+    global _monitor_thread_started
+    with _monitor_lock:
+        if not _monitor_thread_started:
+            start_monitoring_thread(storage)
+            _monitor_thread_started = True
