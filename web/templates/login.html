@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Login — Patient Monitoring{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Staff login</h1>
+        <p class="subtitle">Access the patient monitoring dashboard.</p>
+    </div>
+</div>
+
+<div class="card" style="max-width: 360px;">
+    <form method="post">
+        {% if error %}
+            <p style="color:#fecaca;font-size:0.85rem;margin-top:0;margin-bottom:0.75rem;">
+                {{ error }}
+            </p>
+        {% endif %}
+
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            <label style="font-size:0.85rem;">
+                Username
+                <input
+                    type="text"
+                    name="username"
+                    required
+                    style="width:100%;margin-top:0.2rem;padding:0.35rem 0.5rem;
+                           border-radius:0.4rem;border:1px solid #374151;
+                           background:#020617;color:#e5e7eb;"
+                >
+            </label>
+
+            <label style="font-size:0.85rem;">
+                Password
+                <input
+                    type="password"
+                    name="password"
+                    required
+                    style="width:100%;margin-top:0.2rem;padding:0.35rem 0.5rem;
+                           border-radius:0.4rem;border:1px solid #374151;
+                           background:#020617;color:#e5e7eb;"
+                >
+            </label>
+
+            <button type="submit" class="btn-small" style="align-self:flex-end;margin-top:0.25rem;">
+                Sign in
+            </button>
+        </div>
+
+        <p class="muted small" style="margin-top:0.75rem;">
+            Demo credentials: <code>nurse / healthcare</code>
+        </p>
+    </form>
+</div>
+{% endblock %}
