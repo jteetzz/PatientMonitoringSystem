@@ -3,21 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Patient Monitoring{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('web.static', filename='style.css') }}">
-    <script src="{{ url_for('web.static', filename='app.js') }}" defer></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
+
+
+
+
+
 <body>
 <nav class="navbar">
-    <div class="nav-brand">VitalWatch — Patient Monitoring</div>
-    <a href="{{ url_for('web.dashboard') }}">Dashboard</a>
+    <div class="nav-left">
+        <div class="nav-brand">
+            <span class="nav-logo">🫀</span>
+            <span>VitalWatch · Patient Monitoring</span>
+        </div>
+    </div>
+    <div class="nav-right">
+        {% if session.get("logged_in") %}
+            <span class="nav-link" style="opacity:0.8;cursor:default;">
+                {{ session.get("username") }}
+            </span>
+            <a href="{{ url_for('web.dashboard') }}" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('web.logout') }}" class="nav-link">Logout</a>
+        {% else %}
+            <a href="{{ url_for('web.login') }}" class="nav-link">Login</a>
+        {% endif %}
+    </div>
 </nav>
+
 
 <main class="container">
     {% block content %}{% endblock %}
 </main>
-
-<footer class="footer">
-    <span>Educational prototype — not for clinical use.</span>
-</footer>
 </body>
 </html>
