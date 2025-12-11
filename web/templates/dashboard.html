@@ -2,63 +2,161 @@
 {% block title %}Dashboard — Patient Monitoring{% endblock %}
 
 {% block content %}
-<h1>Patient Dashboard</h1>
-<p class="subtitle">Real-time simulated vital signs with prioritized alerts.</p>
+<div class="page-header">
+    <div>
+        <h1>Patient Dashboard</h1>
+        <p class="subtitle">Simulated real-time vitals with prioritised alerts.</p>
+    </div>
+    <div class="header-meta">
+        {% if alerts %}
+            <span class="meta-pill">
+                Last alert at {{ alerts[0].created_at.strftime("%H:%M:%S") }}
+            </span>
+        {% endif %}
+        <span class="meta-pill subtle">Auto-refreshes every 10 seconds</span>
+    </div>
+</div>
+
+<div class="sim-controls">
+    <form method="post" action="{{ url_for('web.set_simulation') }}">
+        <label class="sim-label">
+            Speed
+            <select name="speed">
+                <option value="normal" {% if sim_speed == "normal" %}selected{% endif %}>
+                    Normal
+                </option>
+                <option value="fast" {% if sim_speed == "fast" %}selected{% endif %}>
+                    Fast
+                </option>
+            </select>
+        </label>
+
+        <label class="sim-label sim-checkbox">
+            <input type="checkbox" name="paused" value="1" {% if sim_paused %}checked{% endif %}>
+            Pause monitoring
+        </label>
+
+        <button type="submit" class="btn-small">
+            Apply
+        </button>
+    </form>
+</div>
+
+<section class="metrics-row">
+    <div class="metric-card">
+        <span class="metric-label">Monitored patients</span>
+        <span class="metric-value">{{ patients|length }}</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Active alerts</span>
+        <span class="metric-value">{{ alerts|length }}</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Critical alerts</span>
+        <span class="metric-value">
+            {{ alerts|selectattr('severity', 'equalto', 'critical')|list|length }}
+        </span>
+    </div>
+</section>
 
 <section class="grid">
+    <!-- Patients table -->
     <div class="card">
-        <h2>Patients</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Name</th>
-                <th>Room</th>
-                <th>Condition</th>
-                <th>Heart Rate</th>
-                <th>SpO2</th>
-                <th>BP</th>
-                <th>Temp</th>
-                <th>Last Updated</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for p in patients %}
-                {% set v = p.latest_vitals %}
-                <tr onclick="goToPatient({{ p.id }})" class="clickable-row">
-                    <td>{{ p.name }}</td>
-                    <td>{{ p.room }}</td>
-                    <td>{{ p.condition }}</td>
-                    {% if v %}
-                        <td>{{ v.heart_rate }} bpm</td>
-                        <td>{{ v.spo2 }}%</td>
-                        <td>{{ v.systolic_bp }}/{{ v.diastolic_bp }}</td>
-                        <td>{{ "%.1f"|format(v.temperature) }} °C</td>
-                        <td>{{ v.timestamp.strftime("%H:%M:%S") }}</td>
-                    {% else %}
-                        <td colspan="4">No data</td>
-                        <td>-</td>
-                    {% endif %}
+        <div class="card-header">
+            <h2>Patients</h2>
+            <span class="card-caption">Click a row to open the full chart.</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Condition</th>
+                    <th>Latest vitals</th>
+                    <th>Status</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <p class="hint">Click a row to view detailed history and alerts.</p>
+                </thead>
+                <tbody>
+                {% for p in patients %}
+                    {% set v = p.latest_vitals %}
+                    <tr onclick="goToPatient({{ p.id }})" class="clickable-row">
+                        <td>
+                            <div class="cell-main">{{ p.name }}</div>
+                            <div class="cell-sub">ID #{{ p.id }} · Room {{ p.room }}</div>
+                        </td>
+                        <td>
+                            <span class="cell-main">{{ p.condition }}</span>
+                        </td>
+                        <td>
+                            {% if v %}
+                                <div class="vital-inline">
+                                    <span class="vital-chip">
+                                        HR {{ v.heart_rate }} <span class="unit">bpm</span>
+                                    </span>
+                                    <span class="vital-chip">
+                                        SpO₂ {{ v.spo2 }}<span class="unit">%</span>
+                                    </span>
+                                    <span class="vital-chip">
+                                        BP {{ v.systolic_bp }}/{{ v.diastolic_bp }}
+                                    </span>
+                                    <span class="vital-chip">
+                                        Temp {{ "%.1f"|format(v.temperature) }}°C
+                                    </span>
+                                </div>
+                                <div class="cell-sub">
+                                    Updated {{ v.timestamp.strftime("%H:%M:%S") }}
+                                </div>
+                            {% else %}
+                                <span class="muted">No vitals recorded yet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set a = p.latest_alert %}
+                            {% if a %}
+                                <span class="pill pill-{{ a.severity }}">
+                                    {{ a.severity|capitalize }}
+                                </span>
+                                <div class="cell-sub">{{ a.message }}</div>
+                            {% else %}
+                                <span class="pill pill-ok">Stable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
+    <!-- Alerts list -->
     <div class="card">
-        <h2>Recent Alerts</h2>
+        <div class="card-header">
+            <h2>Recent alerts</h2>
+            <div class="alert-filters">
+                <button type="button" class="chip chip-active" data-filter="all">All</button>
+                <button type="button" class="chip" data-filter="critical">Critical</button>
+                <button type="button" class="chip" data-filter="warning">Warning</button>
+            </div>
+        </div>
+
         <div class="alert-list">
             {% if alerts %}
-                {% for a in alerts|reverse %}
+                {% for a in alerts %}
                     <div class="alert-item alert-{{ a.severity }}">
                         <div class="alert-header">
-                            <span>Patient #{{ a.patient_id }}</span>
-                            <span>{{ a.created_at.strftime("%H:%M:%S") }}</span>
+                            <span class="alert-time">
+                                {{ a.created_at.strftime("%H:%M:%S") }}
+                            </span>
+                            <span class="pill pill-{{ a.severity }}">
+                                {{ a.severity|capitalize }}
+                            </span>
                         </div>
-                        <p>{{ a.message }}</p>
+                        <p class="alert-message">{{ a.message }}</p>
                         <form method="post" action="{{ url_for('web.ack_alert', alert_id=a.id) }}">
                             {% if not a.acknowledged %}
-                                <button type="submit" class="btn-small">Acknowledge</button>
+                                <button type="submit" class="btn-small">
+                                    Acknowledge
+                                </button>
                             {% else %}
                                 <span class="badge">Acknowledged</span>
                             {% endif %}
@@ -66,11 +164,9 @@
                     </div>
                 {% endfor %}
             {% else %}
-                <p>No alerts yet.</p>
+                <p class="muted">No alerts yet.</p>
             {% endif %}
         </div>
     </div>
 </section>
-
-<p class="auto-refresh-note">This page auto-refreshes every 10 seconds to simulate real-time monitoring.</p>
 {% endblock %}
