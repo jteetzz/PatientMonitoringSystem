@@ -116,6 +116,7 @@ Thread-based monitoring engine
 In-memory storage (no external database)
 
 # Project Structure
+```
 PatientMonitoringSystem/
 │
 ├── app.py                       # App entrypoint
@@ -140,14 +141,15 @@ PatientMonitoringSystem/
 │       └── login.html
 │
 └── README.md
+```
 
 # How to Run the Application
-1. Use this command to install dependencies
-# pip install -r requirements.txt
-2. Start the app
-# python app.py
-3. Open in your browser by clicking the address that loads in the terminal
-# http://127.0.0.1:5000/login
+# 1. Use this command to install dependencies
+pip install -r requirements.txt
+# 2. Start the app
+python app.py
+# 3. Open in your browser by clicking the address that loads in the terminal
+http://127.0.0.1:5000/login
 
 # Example Screenshots
 <img width="1902" height="658" alt="image" src="https://github.com/user-attachments/assets/bfe7fbad-83c7-46fb-97dd-aedc87ad4952" />
